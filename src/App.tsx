@@ -9,6 +9,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Tests from "./pages/Tests";
 import Patients from "./pages/Patients";
+import Exercises from "./pages/Exercises";
 import Reports from "./pages/Reports";
 import AdminSettings from "./pages/AdminSettings";
 import NotFound from "./pages/NotFound";
@@ -47,6 +48,14 @@ const App = () => (
             element={
               <ProtectedRoute allowedRoles={["clinician", "admin"]}>
                 <Patients />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/exercises"
+            element={
+              <ProtectedRoute allowedRoles={["clinician", "admin"]}>
+                <Exercises />
               </ProtectedRoute>
             }
           />

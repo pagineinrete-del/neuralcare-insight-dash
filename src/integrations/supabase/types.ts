@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      assigned_exercises: {
+        Row: {
+          assigned_date: string
+          clinician_id: string
+          completed_date: string | null
+          created_at: string
+          description: string
+          duration_minutes: number | null
+          exercise_type: string
+          id: string
+          instructions: string
+          patient_id: string
+          score: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_date?: string
+          clinician_id: string
+          completed_date?: string | null
+          created_at?: string
+          description: string
+          duration_minutes?: number | null
+          exercise_type: string
+          id?: string
+          instructions: string
+          patient_id: string
+          score?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_date?: string
+          clinician_id?: string
+          completed_date?: string | null
+          created_at?: string
+          description?: string
+          duration_minutes?: number | null
+          exercise_type?: string
+          id?: string
+          instructions?: string
+          patient_id?: string
+          score?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assigned_exercises_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insights: {
         Row: {
           body: string

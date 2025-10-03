@@ -51,7 +51,7 @@ const AppSidebar = () => {
   const clinicianItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Patients", url: "/patients", icon: Users },
-    { title: "Tests", url: "/tests", icon: ClipboardList },
+    { title: "Exercises", url: "/exercises", icon: ClipboardList },
   ];
 
   const adminItems = [
