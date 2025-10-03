@@ -27,15 +27,17 @@ export default function Tests() {
 
   const fetchTests = async () => {
     try {
+      console.log("Fetching tests for user:", user?.id, "role:", userRole?.role);
       let patientId: string | null = null;
 
       if (userRole?.role === "patient") {
-        const { data: patientData } = await supabase
+        const { data: patientData, error: patientError } = await supabase
           .from("patients")
           .select("id")
           .eq("user_id", user!.id)
           .maybeSingle();
         
+        console.log("Patient data:", patientData, "error:", patientError);
         patientId = patientData?.id || null;
       }
 
@@ -46,9 +48,15 @@ export default function Tests() {
           .eq("patient_id", patientId)
           .order("date", { ascending: false });
 
-        if (!error && data) {
+        console.log("Test results:", data, "error:", error);
+        
+        if (error) {
+          console.error("Error fetching test results:", error);
+        } else if (data) {
           setTests(data);
         }
+      } else {
+        console.log("No patient ID found for user");
       }
     } catch (error) {
       console.error("Error fetching tests:", error);
