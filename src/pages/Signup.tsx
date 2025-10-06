@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { AuthLayout } from "@/components/AuthLayout";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { z } from "zod";
 
 const signupSchema = z.object({
@@ -13,9 +15,20 @@ const signupSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string(),
+  role: z.enum(["patient", "clinician"]),
+  birthYear: z.number().min(1900).max(new Date().getFullYear()).optional(),
+  sex: z.enum(["M", "F"]).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+}).refine((data) => {
+  if (data.role === "patient") {
+    return data.birthYear && data.sex;
+  }
+  return true;
+}, {
+  message: "Birth year and sex are required for patients",
+  path: ["birthYear"],
 });
 
 export default function Signup() {
@@ -23,6 +36,9 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<"patient" | "clinician">("patient");
+  const [birthYear, setBirthYear] = useState<number>();
+  const [sex, setSex] = useState<"M" | "F">();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -30,7 +46,16 @@ export default function Signup() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = signupSchema.safeParse({ name, email, password, confirmPassword });
+    const validation = signupSchema.safeParse({ 
+      name, 
+      email, 
+      password, 
+      confirmPassword, 
+      role,
+      birthYear,
+      sex 
+    });
+    
     if (!validation.success) {
       toast({
         title: "Validation Error",
@@ -43,13 +68,22 @@ export default function Signup() {
     setLoading(true);
 
     try {
+      const metadata: any = {
+        name,
+        role,
+      };
+      
+      // Add patient-specific metadata
+      if (role === "patient" && birthYear && sex) {
+        metadata.birth_year = birthYear;
+        metadata.sex = sex;
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            name,
-          },
+          data: metadata,
           emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       });
@@ -96,11 +130,11 @@ export default function Signup() {
     >
       <form onSubmit={handleSignup} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
+          <Label htmlFor="name">Nome Completo</Label>
           <Input
             id="name"
             type="text"
-            placeholder="John Doe"
+            placeholder="Mario Rossi"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -112,12 +146,57 @@ export default function Signup() {
           <Input
             id="email"
             type="email"
-            placeholder="you@example.com"
+            placeholder="email@esempio.it"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>
+
+        <div className="space-y-2">
+          <Label>Tipo di Account</Label>
+          <RadioGroup value={role} onValueChange={(value) => setRole(value as "patient" | "clinician")}>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="patient" id="patient" />
+              <Label htmlFor="patient" className="font-normal cursor-pointer">Paziente</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="clinician" id="clinician" />
+              <Label htmlFor="clinician" className="font-normal cursor-pointer">Dottore</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {role === "patient" && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="birthYear">Anno di Nascita</Label>
+              <Input
+                id="birthYear"
+                type="number"
+                placeholder="1980"
+                min="1900"
+                max={new Date().getFullYear()}
+                value={birthYear || ""}
+                onChange={(e) => setBirthYear(parseInt(e.target.value))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sex">Sesso</Label>
+              <Select value={sex} onValueChange={(value) => setSex(value as "M" | "F")}>
+                <SelectTrigger id="sex">
+                  <SelectValue placeholder="Seleziona" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="M">Maschio</SelectItem>
+                  <SelectItem value="F">Femmina</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
@@ -132,7 +211,7 @@ export default function Signup() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Label htmlFor="confirmPassword">Conferma Password</Label>
           <Input
             id="confirmPassword"
             type="password"
@@ -148,13 +227,13 @@ export default function Signup() {
           className="w-full" 
           disabled={loading}
         >
-          {loading ? "Creating account..." : "Create Account"}
+          {loading ? "Creazione account..." : "Crea Account"}
         </Button>
 
         <div className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+          Hai già un account?{" "}
           <Link to="/login" className="text-primary hover:underline font-medium">
-            Sign in
+            Accedi
           </Link>
         </div>
       </form>
