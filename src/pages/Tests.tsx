@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Brain } from "lucide-react";
+import { CognitiveTest } from "@/components/CognitiveTest";
 
 interface TestResult {
   id: string;
@@ -38,6 +39,7 @@ export default function Tests() {
   const [loading, setLoading] = useState(true);
   const [selectedExercise, setSelectedExercise] = useState<AssignedExercise | null>(null);
   const [exerciseScore, setExerciseScore] = useState("");
+  const [showCognitiveTest, setShowCognitiveTest] = useState(false);
 
   useEffect(() => {
     if (user && userRole) {
@@ -177,6 +179,39 @@ export default function Tests() {
     }
   };
 
+  const handleTestComplete = async (score: number) => {
+    try {
+      const { data: patientData } = await supabase
+        .from("patients")
+        .select("id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+
+      if (!patientData) {
+        toast.error("Errore: paziente non trovato");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("test_results")
+        .insert({
+          patient_id: patientData.id,
+          test_type: "memory",
+          score: score,
+          date: new Date().toISOString().split('T')[0]
+        });
+
+      if (error) throw error;
+
+      toast.success("Risultato salvato con successo!");
+      setShowCognitiveTest(false);
+      fetchTests();
+    } catch (error) {
+      console.error("Error saving test result:", error);
+      toast.error("Errore nel salvataggio del risultato");
+    }
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -187,12 +222,33 @@ export default function Tests() {
     );
   }
 
+  if (showCognitiveTest) {
+    return (
+      <AppLayout>
+        <div className="py-8">
+          <CognitiveTest 
+            onComplete={handleTestComplete}
+            onCancel={() => setShowCognitiveTest(false)}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Test Cognitivi</h1>
-          <p className="text-muted-foreground">I tuoi test ed esercizi cognitivi</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Test Cognitivi</h1>
+            <p className="text-muted-foreground">I tuoi test ed esercizi cognitivi</p>
+          </div>
+          {userRole?.role === "patient" && (
+            <Button onClick={() => setShowCognitiveTest(true)} className="gap-2">
+              <Brain className="h-5 w-5" />
+              Nuovo Test di Memoria
+            </Button>
+          )}
         </div>
 
         {userRole?.role === "patient" && exercises.length > 0 && (
