@@ -108,8 +108,7 @@ export default function Exercises() {
     try {
       const { data: patientsData, error } = await supabase
         .from("patients")
-        .select("id, user_id")
-        .eq("clinician_id", user!.id);
+        .select("id, user_id");
 
       if (error) throw error;
 
